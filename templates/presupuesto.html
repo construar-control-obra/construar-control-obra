@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Presupuesto</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 30px;
+            background: #f5f6fa;
+        }
+        h1 { margin-bottom: 20px; }
+
+        form {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 6px;
+            max-width: 520px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        label {
+            display: block;
+            margin-top: 12px;
+            font-weight: bold;
+        }
+        input, button {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            margin-top: 18px;
+            background: #1e90ff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover { background: #0f78d1; }
+
+        a {
+            display: inline-block;
+            margin-top: 18px;
+            text-decoration: none;
+            color: #1e90ff;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Agregar partida al presupuesto</h1>
+
+    <form method="POST" action="{{ url_for('presupuesto', obra_id=obra_id) }}">
+        <label>Concepto</label>
+        <input type="text" name="concepto" required>
+
+        <label>Cantidad</label>
+        <input type="number" step="0.01" name="cantidad" required>
+
+        <label>Precio unitario</label>
+        <input type="number" step="0.01" name="precio_unitario" required>
+
+        <button type="submit">Agregar al presupuesto</button>
+    </form>
+
+    <!-- OJO: tu app NO tiene endpoint 'obras', por eso usamos 'nueva_obra' -->
+    <a href="{{ url_for('nueva_obra') }}">← Volver</a>
+
+</body>
+</html>
+

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Editar Gasto</title>
+  <style>
+    body{font-family:Arial; background:#f6f7fb; margin:0; padding:30px;}
+    .wrap{max-width:720px; margin:0 auto;}
+    .card{background:#fff; border:1px solid #e6e6e6; border-radius:16px; padding:18px 20px; box-shadow:0 6px 18px rgba(0,0,0,.05);}
+    label{font-size:13px; display:block; margin-top:10px;}
+    input, select{width:100%; padding:10px; border-radius:10px; border:1px solid #ddd; margin-top:6px;}
+    .row{display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
+    .actions{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;}
+    .btn{padding:10px 14px; border-radius:12px; text-decoration:none; border:0; cursor:pointer;}
+    .primary{background:#ff7a00; color:#fff;}
+    .dark{background:#111; color:#fff;}
+  </style>
+</head>
+<body>
+<div class="wrap"><div class="card">
+  <h1 style="margin:0 0 6px;">✏️ Editar gasto</h1>
+
+  <form method="post">
+    <label>Fecha</label>
+    <input type="date" name="fecha" value="{{ g.fecha.strftime('%Y-%m-%d') }}" required>
+
+    <div class="row">
+      <div>
+        <label>Categoría</label>
+        <select name="categoria" required>
+          {% for c in ["Material","Mano de Obra","IMSS","ISR","Indirectos","Equipo/Herramienta","Otros"] %}
+            <option value="{{ c }}" {% if g.categoria==c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Monto</label>
+        <input name="monto" value="{{ g.monto or 0 }}" required>
+      </div>
+    </div>
+
+    <label>Concepto</label>
+    <input name="concepto" value="{{ g.concepto }}" required>
+
+    <div class="actions">
+      <button class="btn primary" type="submit">Guardar</button>
+      <a class="btn dark" href="{{ url_for('gastos', obra_id=g.obra_id) }}">← Volver</a>
+    </div>
+  </form>
+</div></div>
+</body>
+</html>

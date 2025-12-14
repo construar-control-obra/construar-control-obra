@@ -1,0 +1,83 @@
+
+
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nueva Obra</title>
+  <style>
+    body{font-family:Arial; background:#f6f7fb; margin:0; padding:30px;}
+    .wrap{max-width:980px; margin:0 auto;}
+    .card{background:#fff; border:1px solid #e6e6e6; border-radius:16px; padding:18px 20px; box-shadow:0 6px 18px rgba(0,0,0,.05);}
+    h1{margin:0 0 6px;}
+    .muted{color:#777; font-size:13px;}
+    label{font-size:13px; display:block; margin-top:10px;}
+    input{width:100%; padding:10px; border-radius:10px; border:1px solid #ddd; margin-top:6px;}
+    .row{display:grid; grid-template-columns: 1fr 1fr; gap:12px;}
+    .actions{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;}
+    .btn{padding:10px 14px; border-radius:12px; text-decoration:none; border:0; cursor:pointer; display:inline-block;}
+    .primary{background:#0b5fff; color:#fff;}
+    .dark{background:#111; color:#fff;}
+    table{width:100%; border-collapse:collapse; margin-top:16px;}
+    th,td{border-bottom:1px solid #eee; padding:10px; font-size:14px;}
+    th{background:#f1f2f6;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+<div class="card">
+
+  <h1>➕ Nueva Obra</h1>
+  <p class="muted">Crea una obra y se guardará en tu PC (SQLite).</p>
+
+  <form method="post" action="{{ url_for('nueva_obra') }}">
+    <label>Nombre de la obra *</label>
+    <input name="nombre" required placeholder="Ej. Casa Copas / Obra 001">
+
+    <div class="row">
+      <div>
+        <label>Ubicación</label>
+        <input name="ubicacion" placeholder="Ej. Atizapán, Edo. Mex.">
+      </div>
+      <div>
+        <label>Cliente</label>
+        <input name="cliente" placeholder="Ej. Cliente X">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" type="submit">Guardar</button>
+      <a class="btn dark" href="{{ url_for('home') }}">← Volver</a>
+    </div>
+  </form>
+
+  <h2 style="margin:18px 0 6px;">Obras registradas</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Ubicación</th>
+        <th>Cliente</th>
+        <th>Creado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for o in obras %}
+      <tr>
+        <td>{{ o.nombre }}</td>
+        <td>{{ o.ubicacion or "" }}</td>
+        <td>{{ o.cliente or "" }}</td>
+        <td>{{ o.creado.strftime("%Y-%m-%d %H:%M") }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="muted">Aún no hay obras registradas.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,64 @@
+
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard</title>
+  <style>
+    body{font-family:Arial; background:#f6f7fb; margin:0; padding:30px;}
+    .wrap{max-width:980px; margin:0 auto;}
+    .card{background:#fff; border:1px solid #e6e6e6; border-radius:16px; padding:18px 20px; box-shadow:0 6px 18px rgba(0,0,0,.05);}
+    h1{margin:0 0 6px;}
+    .muted{color:#777; font-size:13px;}
+    table{width:100%; border-collapse:collapse; margin-top:14px;}
+    th,td{border-bottom:1px solid #eee; padding:10px; font-size:14px;}
+    th{background:#f1f2f6;}
+    .right{text-align:right;}
+    .pill{background:#f1f2f6; padding:10px 12px; border-radius:14px; display:inline-block; margin-top:8px;}
+    .btn{display:inline-block; margin-top:12px; background:#111; color:#fff; padding:10px 14px; border-radius:12px; text-decoration:none;}
+  </style>
+</head>
+<body>
+<div class="wrap"><div class="card">
+
+  <h1>📊 Dashboard</h1>
+  <p class="muted">Comparativo general: Presupuesto vs Gastos.</p>
+
+  <div class="pill">
+    Total Presupuesto: <b>{{ "%.2f"|format(total_pres or 0) }}</b> |
+    Total Gastos: <b>{{ "%.2f"|format(total_gas or 0) }}</b> |
+    Diferencia: <b>{{ "%.2f"|format(total_diff or 0) }}</b> |
+    Avance: <b>{{ "%.2f"|format(total_avance or 0) }}%</b>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Obra</th>
+        <th class="right">Presupuesto</th>
+        <th class="right">Gastos</th>
+        <th class="right">Diferencia</th>
+        <th class="right">% Avance</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in filas %}
+      <tr>
+        <td>{{ r.obra.nombre }}</td>
+        <td class="right">{{ "%.2f"|format(r.presupuesto or 0) }}</td>
+        <td class="right">{{ "%.2f"|format(r.gastos or 0) }}</td>
+        <td class="right">{{ "%.2f"|format(r.diferencia or 0) }}</td>
+        <td class="right">{{ "%.2f"|format(r.avance or 0) }}%</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="muted">Sin obras aún.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <a class="btn" href="{{ url_for('home') }}">← Volver al inicio</a>
+
+</div></div>
+</body>
+</html>
