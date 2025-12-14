@@ -5,115 +5,135 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gastos</title>
   <style>
-    body{font-family:Arial; background:#f6f7fb; margin:0; padding:30px;}
-    .wrap{max-width:980px; margin:0 auto;}
-    .card{background:#fff; border:1px solid #e6e6e6; border-radius:16px; padding:18px 20px; box-shadow:0 6px 18px rgba(0,0,0,.05);}
-    h1{margin:0 0 6px;}
-    .muted{color:#777; font-size:13px;}
-    label{font-size:13px; display:block; margin-top:10px;}
-    input, select{width:100%; padding:10px; border-radius:10px; border:1px solid #ddd; margin-top:6px;}
-    .grid{display:grid; grid-template-columns: 160px 200px 1fr 160px; gap:10px;}
-    .actions{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;}
-    .btn{padding:10px 14px; border-radius:12px; text-decoration:none; border:0; cursor:pointer;}
-    .primary{background:#ff7a00; color:#fff;}
-    .dark{background:#111; color:#fff;}
-    table{width:100%; border-collapse:collapse; margin-top:16px;}
-    th,td{border-bottom:1px solid #eee; padding:10px; font-size:14px;}
-    th{background:#f1f2f6;}
-    .right{text-align:right;}
+    body{font-family:Arial;background:#f6f7fb;margin:0;padding:20px}
+    .wrap{max-width:980px;margin:0 auto}
+    .card{background:#fff;border:1px solid #e6e6e6;border-radius:16px;padding:18px 20px;box-shadow:0 6px 18px rgba(0,0,0,.05)}
+    h1{margin:0 0 6px;font-size:28px}
+    .sub{color:#555;margin:0 0 14px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:720px){.row{grid-template-columns:1fr}}
+    label{display:block;font-size:13px;color:#555;margin:0 0 6px}
+    input,select{width:100%;padding:12px;border:1px solid #ddd;border-radius:12px;font-size:16px}
+    .btn{display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 14px;border-radius:12px;border:none;font-size:16px;cursor:pointer}
+    .btn2{background:#ff7a00}
+    .topbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin:14px 0}
+    .pill{background:#f1f2f6;border-radius:999px;padding:10px 12px;font-weight:700}
+    table{width:100%;border-collapse:collapse;margin-top:14px}
+    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left;font-size:14px}
+    th{background:#f3f4f8}
+    .muted{color:#777;font-size:13px;margin-top:10px}
+    .flash{margin:10px 0;padding:10px 12px;border-radius:12px}
+    .ok{background:#e9fff1;border:1px solid #b7f0c8}
+    .err{background:#fff0f0;border:1px solid #f1b9b9}
   </style>
 </head>
 <body>
-<div class="wrap">
-<div class="card">
+  <div class="wrap">
+    <div class="card">
+      <h1>💸 Gastos</h1>
+      <p class="sub">Registra tus gastos por día y asígnalos a la obra correcta (ideal para usar en celular en obra).</p>
 
-<h1>💸 Gastos</h1>
-<p class="muted">Registro de gastos por obra.</p>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for cat, msg in messages %}
+            <div class="flash {{ 'ok' if cat=='ok' else 'err' }}">{{ msg }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
 
-<form method="get">
-  <label>Selecciona obra</label>
-  <select name="obra_id" onchange="this.form.submit()">
-    {% for o in obras %}
-      <option value="{{ o.id }}" {% if obra_sel and o.id == obra_sel.id %}selected{% endif %}>
-        {{ o.nombre }}
-      </option>
-    {% endfor %}
-  </select>
-</form>
+      <!-- FILTRO (GET) -->
+      <form method="GET" action="/gastos">
+        <div class="row">
+          <div>
+            <label>Fecha</label>
+            <input type="date" name="fecha" value="{{ fecha_sel.isoformat() }}">
+          </div>
+          <div>
+            <label>Obra (opcional para filtrar)</label>
+            <select name="obra_id">
+              <option value="">Todas</option>
+              {% for o in obras %}
+                <option value="{{ o.id }}" {% if obra_id_sel==o.id %}selected{% endif %}>{{ o.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:12px">
+          <button class="btn" type="submit">🔎 Ver gastos</button>
+        </div>
+      </form>
 
-{% if obra_sel %}
-<hr style="border:none;border-top:1px solid #eee;margin:14px 0;">
+      <hr style="border:none;border-top:1px solid #eee;margin:16px 0">
 
-<form method="post">
-  <input type="hidden" name="obra_id" value="{{ obra_sel.id }}">
+      <!-- ALTA (POST) -->
+      <form method="POST" action="/gastos">
+        <div class="row">
+          <div>
+            <label>Obra (obligatorio)</label>
+            <select name="obra_id" required>
+              <option value="">Selecciona…</option>
+              {% for o in obras %}
+                <option value="{{ o.id }}" {% if obra_id_sel==o.id %}selected{% endif %}>{{ o.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
 
-  <div class="grid">
-    <div>
-      <label>Fecha</label>
-      <input type="date" name="fecha" required>
-    </div>
+          <div>
+            <label>Fecha del gasto</label>
+            <input type="date" name="fecha" value="{{ fecha_sel.isoformat() }}" required>
+          </div>
 
-    <div>
-      <label>Categoría</label>
-      <select name="categoria" required>
-        <option>Material</option>
-        <option>Mano de Obra</option>
-        <option>IMSS</option>
-        <option>ISR</option>
-        <option>Indirectos</option>
-        <option>Equipo</option>
-        <option>Otros</option>
-      </select>
-    </div>
+          <div>
+            <label>Concepto</label>
+            <input type="text" name="concepto" placeholder="Ej: Cemento, gasolina, mano de obra…" required>
+          </div>
 
-    <div>
-      <label>Concepto</label>
-      <input name="concepto" required>
-    </div>
+          <div>
+            <label>Monto</label>
+            <input type="number" step="0.01" name="monto" placeholder="Ej: 1250.00" required>
+          </div>
+        </div>
 
-    <div>
-      <label>Monto</label>
-      <input name="monto" required>
+        <div class="topbar">
+          <button class="btn btn2" type="submit">✅ Guardar gasto</button>
+          <div class="pill">Total del día: {{ '%.2f'|format(total_dia) }}</div>
+        </div>
+      </form>
+
+      <!-- LISTA -->
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Obra</th>
+            <th>Concepto</th>
+            <th>Monto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if gastos and gastos|length > 0 %}
+            {% for g in gastos %}
+              <tr>
+                <td>{{ g.fecha }}</td>
+                <td>{{ g.obra.nombre }}</td>
+                <td>{{ g.concepto }}</td>
+                <td>{{ '%.2f'|format(g.monto) }}</td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr><td colspan="4" class="muted">No hay gastos registrados para esta fecha/filtro.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+
+      <div style="margin-top:14px">
+        <a class="btn" href="/">← Volver al inicio</a>
+      </div>
+
+      <p class="muted">
+        Tip: si la app tarda al abrir en celular, es normal en plan gratis (se “duerme”). Espera unos segundos y listo.
+      </p>
     </div>
   </div>
-
-  <div class="actions">
-    <button class="btn primary">Agregar gasto</button>
-    <a class="btn dark" href="{{ url_for('home') }}">← Volver</a>
-  </div>
-</form>
-
-<table>
-  <thead>
-    <tr>
-      <th>Fecha</th>
-      <th>Categoría</th>
-      <th>Concepto</th>
-      <th class="right">Monto</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for g in gastos %}
-    <tr>
-      <td>{{ g.fecha }}</td>
-      <td>{{ g.categoria }}</td>
-      <td>{{ g.concepto }}</td>
-      <td class="right">{{ "%.2f"|format(g.monto) }}</td>
-    </tr>
-    {% else %}
-    <tr>
-      <td colspan="4" class="muted">Aún no hay gastos registrados.</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-
-{% else %}
-<p class="muted">Primero crea una obra.</p>
-<a class="btn dark" href="{{ url_for('home') }}">← Volver</a>
-{% endif %}
-
-</div>
-</div>
 </body>
 </html>
