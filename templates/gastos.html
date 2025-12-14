@@ -19,19 +19,21 @@
     .topbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin:14px 0}
     .pill{background:#f1f2f6;border-radius:999px;padding:10px 12px;font-weight:700}
     table{width:100%;border-collapse:collapse;margin-top:14px}
-    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left;font-size:14px}
+    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left;font-size:14px;vertical-align:top}
     th{background:#f3f4f8}
     .muted{color:#777;font-size:13px;margin-top:10px}
     .flash{margin:10px 0;padding:10px 12px;border-radius:12px}
     .ok{background:#e9fff1;border:1px solid #b7f0c8}
     .err{background:#fff0f0;border:1px solid #f1b9b9}
+    img.thumb{max-width:110px;max-height:110px;border-radius:10px;border:1px solid #eee;display:block}
+    .small{font-size:12px;color:#666;margin-top:4px}
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
       <h1>💸 Gastos</h1>
-      <p class="sub">Registra tus gastos por día y asígnalos a la obra correcta (ideal para usar en celular en obra).</p>
+      <p class="sub">Registra gastos por día y asígnalos a la obra (desde tu celular en obra). Ahora con foto de ticket.</p>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -66,7 +68,7 @@
       <hr style="border:none;border-top:1px solid #eee;margin:16px 0">
 
       <!-- ALTA (POST) -->
-      <form method="POST" action="/gastos">
+      <form method="POST" action="/gastos" enctype="multipart/form-data">
         <div class="row">
           <div>
             <label>Obra (obligatorio)</label>
@@ -85,12 +87,18 @@
 
           <div>
             <label>Concepto</label>
-            <input type="text" name="concepto" placeholder="Ej: Cemento, gasolina, mano de obra…" required>
+            <input type="text" name="concepto" placeholder="Ej: Cemento, gasolina, MO…" required>
           </div>
 
           <div>
             <label>Monto</label>
             <input type="number" step="0.01" name="monto" placeholder="Ej: 1250.00" required>
+          </div>
+
+          <div style="grid-column: 1 / -1;">
+            <label>Foto del ticket (opcional)</label>
+            <input type="file" name="foto" accept="image/*" capture="environment">
+            <div class="small">Tip: en celular te abre la cámara para tomar la foto directo.</div>
           </div>
         </div>
 
@@ -108,6 +116,7 @@
             <th>Obra</th>
             <th>Concepto</th>
             <th>Monto</th>
+            <th>Ticket</th>
           </tr>
         </thead>
         <tbody>
@@ -118,10 +127,19 @@
                 <td>{{ g.obra.nombre }}</td>
                 <td>{{ g.concepto }}</td>
                 <td>{{ '%.2f'|format(g.monto) }}</td>
+                <td>
+                  {% if g.foto_bytes %}
+                    <a href="{{ url_for('gasto_foto', gasto_id=g.id) }}" target="_blank">
+                      <img class="thumb" src="{{ url_for('gasto_foto', gasto_id=g.id) }}" alt="Ticket">
+                    </a>
+                  {% else %}
+                    <span class="muted">Sin foto</span>
+                  {% endif %}
+                </td>
               </tr>
             {% endfor %}
           {% else %}
-            <tr><td colspan="4" class="muted">No hay gastos registrados para esta fecha/filtro.</td></tr>
+            <tr><td colspan="5" class="muted">No hay gastos registrados para esta fecha/filtro.</td></tr>
           {% endif %}
         </tbody>
       </table>
@@ -131,7 +149,7 @@
       </div>
 
       <p class="muted">
-        Tip: si la app tarda al abrir en celular, es normal en plan gratis (se “duerme”). Espera unos segundos y listo.
+        Nota: la foto se guarda en la base de datos. Mantén las fotos ligeras (máx 3 MB).
       </p>
     </div>
   </div>

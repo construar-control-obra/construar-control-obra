@@ -1,7 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+
+
+from flask import Flask, render_template, request, redirect, url_for, flash, Response
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, date
 import os
+from sqlalchemy import text
 
 app = Flask(__name__)
 app.secret_key = "construar-local"
@@ -11,12 +14,10 @@ app.secret_key = "construar-local"
 # =========================
 db_url = os.environ.get("DATABASE_URL")
 if db_url:
-    # Render suele dar postgres://, SQLAlchemy requiere postgresql://
     if db_url.startswith("postgres://"):
         db_url = db_url.replace("postgres://", "postgresql://", 1)
     app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 else:
-    # Local: SQLite dentro de /instance
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(app.instance_path, "construar.db")
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -52,11 +53,44 @@ class Gasto(db.Model):
     fecha = db.Column(db.Date, nullable=False, default=date.today)  # gasto por día
     concepto = db.Column(db.String(250), nullable=False)
     monto = db.Column(db.Float, nullable=False, default=0.0)
+
+    # FOTO (ticket/nota) guardada en DB
+    foto_nombre = db.Column(db.String(200), nullable=True)
+    foto_mime = db.Column(db.String(80), nullable=True)
+    foto_bytes = db.Column(db.LargeBinary, nullable=True)
+
     creado = db.Column(db.DateTime, default=datetime.utcnow)
+
+def ensure_gasto_photo_columns():
+    """Agrega columnas de foto si no existen (para nube/local) sin migraciones."""
+    dialect = db.engine.dialect.name  # 'postgresql' o 'sqlite'
+    if dialect == "postgresql":
+        stmts = [
+            "ALTER TABLE gasto ADD COLUMN IF NOT EXISTS foto_nombre VARCHAR(200);",
+            "ALTER TABLE gasto ADD COLUMN IF NOT EXISTS foto_mime VARCHAR(80);",
+            "ALTER TABLE gasto ADD COLUMN IF NOT EXISTS foto_bytes BYTEA;",
+        ]
+        for s in stmts:
+            db.session.execute(text(s))
+        db.session.commit()
+    else:
+        # sqlite: no soporta IF NOT EXISTS en todas las versiones; se intenta y se ignora si falla
+        stmts = [
+            "ALTER TABLE gasto ADD COLUMN foto_nombre TEXT;",
+            "ALTER TABLE gasto ADD COLUMN foto_mime TEXT;",
+            "ALTER TABLE gasto ADD COLUMN foto_bytes BLOB;",
+        ]
+        for s in stmts:
+            try:
+                db.session.execute(text(s))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
 
 with app.app_context():
     os.makedirs(app.instance_path, exist_ok=True)
     db.create_all()
+    ensure_gasto_photo_columns()
 
 # =========================
 # RUTAS
@@ -92,24 +126,31 @@ def nueva_obra():
 @app.route("/presupuesto")
 def presupuesto():
     obras_lista = Obra.query.order_by(Obra.creado.desc()).all()
-    # por ahora solo muestra pantalla; luego metemos alta de partidas si quieres
     return render_template("presupuesto.html", obras=obras_lista)
 
 # =========================
-# GASTOS POR DÍA (OPCIÓN A)
+# FOTO: servir imagen del gasto
+# =========================
+@app.route("/gastos/<int:gasto_id>/foto")
+def gasto_foto(gasto_id):
+    g = Gasto.query.get_or_404(gasto_id)
+    if not g.foto_bytes or not g.foto_mime:
+        return ("", 404)
+    return Response(g.foto_bytes, mimetype=g.foto_mime)
+
+# =========================
+# GASTOS POR DÍA + FOTO
 # =========================
 @app.route("/gastos", methods=["GET", "POST"])
 def gastos():
     obras_lista = Obra.query.order_by(Obra.creado.desc()).all()
 
-    # fecha seleccionada (por defecto hoy)
     fecha_str = request.args.get("fecha") or date.today().isoformat()
     try:
         fecha_sel = datetime.strptime(fecha_str, "%Y-%m-%d").date()
     except ValueError:
         fecha_sel = date.today()
 
-    # obra seleccionada (opcional)
     obra_id_q = request.args.get("obra_id")
     obra_id_sel = int(obra_id_q) if obra_id_q and obra_id_q.isdigit() else None
 
@@ -119,13 +160,11 @@ def gastos():
         monto_raw = (request.form.get("monto") or "").strip()
         fecha_post = request.form.get("fecha") or date.today().isoformat()
 
-        # parse fecha
         try:
             f = datetime.strptime(fecha_post, "%Y-%m-%d").date()
         except ValueError:
             f = date.today()
 
-        # validaciones
         if not obra_id or not obra_id.isdigit():
             flash("Selecciona una obra.", "error")
             return redirect(url_for("gastos", fecha=f.isoformat()))
@@ -143,11 +182,36 @@ def gastos():
             flash("El monto debe ser mayor a 0.", "error")
             return redirect(url_for("gastos", obra_id=obra_id, fecha=f.isoformat()))
 
+        # FOTO (opcional)
+        foto = request.files.get("foto")
+        foto_nombre = None
+        foto_mime = None
+        foto_bytes = None
+
+        if foto and foto.filename:
+            # Validación básica: solo imágenes
+            foto_mime = (foto.mimetype or "").lower()
+            if not foto_mime.startswith("image/"):
+                flash("La foto debe ser una imagen (JPG/PNG/HEIC, etc).", "error")
+                return redirect(url_for("gastos", obra_id=obra_id, fecha=f.isoformat()))
+
+            # Límite (3 MB)
+            raw = foto.read()
+            if len(raw) > 3 * 1024 * 1024:
+                flash("La foto pesa mucho. Máximo 3 MB.", "error")
+                return redirect(url_for("gastos", obra_id=obra_id, fecha=f.isoformat()))
+
+            foto_nombre = foto.filename
+            foto_bytes = raw
+
         g = Gasto(
             obra_id=int(obra_id),
             fecha=f,
             concepto=concepto,
-            monto=monto
+            monto=monto,
+            foto_nombre=foto_nombre,
+            foto_mime=foto_mime,
+            foto_bytes=foto_bytes
         )
         db.session.add(g)
         db.session.commit()
@@ -155,7 +219,6 @@ def gastos():
         flash("Gasto guardado ✅", "ok")
         return redirect(url_for("gastos", obra_id=obra_id, fecha=f.isoformat()))
 
-    # consulta gastos
     q = Gasto.query.filter(Gasto.fecha == fecha_sel).order_by(Gasto.creado.desc())
     if obra_id_sel:
         q = q.filter(Gasto.obra_id == obra_id_sel)
@@ -213,9 +276,7 @@ def dashboard():
         total_avance=total_avance
     )
 
-# SOLO PARA LOCAL (en Render lo ignora gunicorn)
+# SOLO PARA LOCAL (Render usa gunicorn)
 if __name__ == "__main__":
     app.run(debug=True)
-
-
 
