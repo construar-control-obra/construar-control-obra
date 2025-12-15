@@ -3,51 +3,80 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Editar Gasto</title>
+  <title>Editar gasto</title>
   <style>
-    body{font-family:Arial; background:#f6f7fb; margin:0; padding:30px;}
-    .wrap{max-width:720px; margin:0 auto;}
-    .card{background:#fff; border:1px solid #e6e6e6; border-radius:16px; padding:18px 20px; box-shadow:0 6px 18px rgba(0,0,0,.05);}
-    label{font-size:13px; display:block; margin-top:10px;}
-    input, select{width:100%; padding:10px; border-radius:10px; border:1px solid #ddd; margin-top:6px;}
-    .row{display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
-    .actions{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;}
-    .btn{padding:10px 14px; border-radius:12px; text-decoration:none; border:0; cursor:pointer;}
-    .primary{background:#ff7a00; color:#fff;}
-    .dark{background:#111; color:#fff;}
+    body{font-family:Arial;background:#f6f7fb;margin:0;padding:20px}
+    .wrap{max-width:900px;margin:0 auto}
+    .card{background:#fff;border:1px solid #e6e6e6;border-radius:16px;padding:18px 20px;box-shadow:0 6px 18px rgba(0,0,0,.06)}
+    input,textarea{padding:10px;border:1px solid #ddd;border-radius:12px;width:100%}
+    textarea{min-height:44px}
+    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+    .row > div{flex:1;min-width:200px}
+    button{padding:12px 14px;border:0;border-radius:12px;background:#111;color:#fff;cursor:pointer}
+    a{color:#6a00ff;text-decoration:none}
+    .img{max-width:220px;border-radius:12px;border:1px solid #eee}
   </style>
 </head>
 <body>
-<div class="wrap"><div class="card">
-  <h1 style="margin:0 0 6px;">✏️ Editar gasto</h1>
+  <div class="wrap">
+    <div class="card">
+      <h1>✏️ Editar gasto</h1>
+      <p>Obra: <b>{{ obra_sel.nombre }}</b></p>
 
-  <form method="post">
-    <label>Fecha</label>
-    <input type="date" name="fecha" value="{{ g.fecha.strftime('%Y-%m-%d') }}" required>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div style="margin-top:12px">
+            {% for cat,msg in messages %}
+              <div style="padding:10px;border-radius:10px;margin:6px 0;background:#fff7e6;border:1px solid #ffe2a8">{{ msg }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
 
-    <div class="row">
-      <div>
-        <label>Categoría</label>
-        <select name="categoria" required>
-          {% for c in ["Material","Mano de Obra","IMSS","ISR","Indirectos","Equipo/Herramienta","Otros"] %}
-            <option value="{{ c }}" {% if g.categoria==c %}selected{% endif %}>{{ c }}</option>
-          {% endfor %}
-        </select>
+      <form method="post" enctype="multipart/form-data" class="row">
+        <div>
+          <label>Fecha</label>
+          <input type="date" name="fecha" value="{{ gasto.fecha.strftime('%Y-%m-%d') if gasto.fecha else '' }}" required>
+        </div>
+        <div>
+          <label>Concepto</label>
+          <input name="concepto" value="{{ gasto.concepto }}" required>
+        </div>
+        <div>
+          <label>Proveedor</label>
+          <input name="proveedor" value="{{ gasto.proveedor or '' }}">
+        </div>
+        <div>
+          <label>Monto</label>
+          <input name="monto" inputmode="decimal" value="{{ '%.2f'|format(gasto.monto or 0) }}">
+        </div>
+        <div style="min-width:260px">
+          <label>Nota</label>
+          <textarea name="nota">{{ gasto.nota or '' }}</textarea>
+        </div>
+        <div style="min-width:260px">
+          <label>Nueva foto (opcional, máx 3MB)</label>
+          <input type="file" name="ticket" accept="image/*">
+        </div>
+        <div style="min-width:140px">
+          <button type="submit">Guardar cambios</button>
+        </div>
+      </form>
+
+      <div style="margin-top:12px">
+        <p><b>Ticket actual:</b></p>
+        {% if gasto.foto_url %}
+          <a href="{{gasto.foto_url}}" target="_blank"><img class="img" src="{{gasto.foto_url}}" alt="ticket"></a>
+        {% else %}
+          <p>Sin foto.</p>
+        {% endif %}
       </div>
-      <div>
-        <label>Monto</label>
-        <input name="monto" value="{{ g.monto or 0 }}" required>
-      </div>
-    </div>
 
-    <label>Concepto</label>
-    <input name="concepto" value="{{ g.concepto }}" required>
-
-    <div class="actions">
-      <button class="btn primary" type="submit">Guardar</button>
-      <a class="btn dark" href="{{ url_for('gastos', obra_id=g.obra_id) }}">← Volver</a>
+      <p style="margin-top:14px">
+        <a href="/gastos?obra_id={{obra_sel.id}}&fecha={{gasto.fecha.strftime('%Y-%m-%d') if gasto.fecha else ''}}">← Volver a Gastos</a>
+      </p>
     </div>
-  </form>
-</div></div>
+  </div>
 </body>
 </html>
+

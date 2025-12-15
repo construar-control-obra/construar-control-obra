@@ -1,72 +1,117 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Presupuesto</title>
-    <style>
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            margin: 30px;
-            background: #f5f6fa;
-        }
-        h1 { margin-bottom: 20px; }
-
-        form {
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 6px;
-            max-width: 520px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        }
-        label {
-            display: block;
-            margin-top: 12px;
-            font-weight: bold;
-        }
-        input, button {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            box-sizing: border-box;
-        }
-        button {
-            margin-top: 18px;
-            background: #1e90ff;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover { background: #0f78d1; }
-
-        a {
-            display: inline-block;
-            margin-top: 18px;
-            text-decoration: none;
-            color: #1e90ff;
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Presupuesto</title>
+  <style>
+    body{font-family:Arial;background:#f6f7fb;margin:0;padding:20px}
+    .wrap{max-width:1100px;margin:0 auto}
+    .card{background:#fff;border:1px solid #e6e6e6;border-radius:16px;padding:18px 20px;box-shadow:0 6px 18px rgba(0,0,0,.06);margin-bottom:14px}
+    a{color:#6a00ff;text-decoration:none}
+    select,input{padding:10px;border:1px solid #ddd;border-radius:12px}
+    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+    .row > div{flex:1;min-width:160px}
+    button{padding:12px 14px;border:0;border-radius:12px;background:#111;color:#fff;cursor:pointer}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left}
+    .pill{display:inline-block;padding:10px 12px;border-radius:14px;background:#f1f5ff;border:1px solid #dbe7ff}
+    .muted{color:#666}
+  </style>
 </head>
 <body>
+  <div class="wrap">
 
-    <h1>Agregar partida al presupuesto</h1>
+    <div class="card">
+      <h1>📑 Presupuesto</h1>
 
-    <form method="POST" action="{{ url_for('presupuesto', obra_id=obra_id) }}">
-        <label>Concepto</label>
-        <input type="text" name="concepto" required>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div style="margin-top:12px">
+            {% for cat,msg in messages %}
+              <div style="padding:10px;border-radius:10px;margin:6px 0;background:#f1f5ff;border:1px solid #dbe7ff">
+                {{ msg }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
 
-        <label>Cantidad</label>
-        <input type="number" step="0.01" name="cantidad" required>
+      <form method="get" class="row">
+        <div>
+          <label>Obra</label><br>
+          <select name="obra_id" onchange="this.form.submit()">
+            <option value="">-- Selecciona --</option>
+            {% for o in obras %}
+              <option value="{{o.id}}" {% if obra_sel and obra_sel.id==o.id %}selected{% endif %}>{{o.nombre}}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </form>
 
-        <label>Precio unitario</label>
-        <input type="number" step="0.01" name="precio_unitario" required>
+      {% if obra_sel %}
+        <p style="margin-top:12px" class="pill">
+          Obra: <b>{{obra_sel.nombre}}</b> | Total Presupuesto: <b>{{"%.2f"|format(total)}}</b>
+        </p>
 
-        <button type="submit">Agregar al presupuesto</button>
-    </form>
+        <form method="post" class="row" style="margin-top:12px">
+          <input type="hidden" name="obra_id" value="{{obra_sel.id}}">
+          <div>
+            <label>Partida</label><br>
+            <input name="partida" placeholder="Ej. Cimentación" required>
+          </div>
+          <div>
+            <label>Descripción</label><br>
+            <input name="descripcion" placeholder="Ej. Excavación + plantilla" required>
+          </div>
+          <div>
+            <label>Cantidad</label><br>
+            <input name="cantidad" inputmode="decimal" placeholder="0.00">
+          </div>
+          <div>
+            <label>P. Unitario</label><br>
+            <input name="precio_unitario" inputmode="decimal" placeholder="0.00">
+          </div>
+          <div style="min-width:140px">
+            <button type="submit">Agregar</button>
+          </div>
+        </form>
 
-    <!-- OJO: tu app NO tiene endpoint 'obras', por eso usamos 'nueva_obra' -->
-    <a href="{{ url_for('nueva_obra') }}">← Volver</a>
+        <table>
+          <thead>
+            <tr>
+              <th>Partida</th>
+              <th>Descripción</th>
+              <th>Cantidad</th>
+              <th>P.Unit</th>
+              <th>Importe</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in partidas %}
+            <tr>
+              <td>{{p.partida}}</td>
+              <td>{{p.descripcion}}</td>
+              <td>{{"%.2f"|format(p.cantidad or 0)}}</td>
+              <td>{{"%.2f"|format(p.precio_unitario or 0)}}</td>
+              <td>{{"%.2f"|format((p.cantidad or 0)*(p.precio_unitario or 0))}}</td>
+            </tr>
+            {% endfor %}
+            {% if partidas|length == 0 %}
+            <tr><td colspan="5" class="muted">Sin partidas aún.</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="muted">Selecciona una obra para ver y capturar su presupuesto.</p>
+      {% endif %}
 
+      <p style="margin-top:14px"><a href="/">← Volver al inicio</a></p>
+    </div>
+
+  </div>
 </body>
 </html>
+
+
 

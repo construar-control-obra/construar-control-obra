@@ -6,152 +6,146 @@
   <title>Gastos</title>
   <style>
     body{font-family:Arial;background:#f6f7fb;margin:0;padding:20px}
-    .wrap{max-width:980px;margin:0 auto}
-    .card{background:#fff;border:1px solid #e6e6e6;border-radius:16px;padding:18px 20px;box-shadow:0 6px 18px rgba(0,0,0,.05)}
-    h1{margin:0 0 6px;font-size:28px}
-    .sub{color:#555;margin:0 0 14px}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    @media (max-width:720px){.row{grid-template-columns:1fr}}
-    label{display:block;font-size:13px;color:#555;margin:0 0 6px}
-    input,select{width:100%;padding:12px;border:1px solid #ddd;border-radius:12px;font-size:16px}
-    .btn{display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 14px;border-radius:12px;border:none;font-size:16px;cursor:pointer}
-    .btn2{background:#ff7a00}
-    .topbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin:14px 0}
-    .pill{background:#f1f2f6;border-radius:999px;padding:10px 12px;font-weight:700}
-    table{width:100%;border-collapse:collapse;margin-top:14px}
-    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left;font-size:14px;vertical-align:top}
-    th{background:#f3f4f8}
-    .muted{color:#777;font-size:13px;margin-top:10px}
-    .flash{margin:10px 0;padding:10px 12px;border-radius:12px}
-    .ok{background:#e9fff1;border:1px solid #b7f0c8}
-    .err{background:#fff0f0;border:1px solid #f1b9b9}
-    img.thumb{max-width:110px;max-height:110px;border-radius:10px;border:1px solid #eee;display:block}
-    .small{font-size:12px;color:#666;margin-top:4px}
+    .wrap{max-width:1100px;margin:0 auto}
+    .card{background:#fff;border:1px solid #e6e6e6;border-radius:16px;padding:18px 20px;box-shadow:0 6px 18px rgba(0,0,0,.06);margin-bottom:14px}
+    a{color:#6a00ff;text-decoration:none}
+    select,input,textarea{padding:10px;border:1px solid #ddd;border-radius:12px;width:100%}
+    textarea{min-height:44px}
+    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+    .row > div{flex:1;min-width:180px}
+    button{padding:12px 14px;border:0;border-radius:12px;background:#111;color:#fff;cursor:pointer}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left;vertical-align:top}
+    .pill{display:inline-block;padding:10px 12px;border-radius:14px;background:#f1f5ff;border:1px solid #dbe7ff}
+    .muted{color:#666}
+    .img{max-width:140px;border-radius:12px;border:1px solid #eee}
+    .flash{padding:10px;border-radius:10px;margin:6px 0;background:#f1f5ff;border:1px solid #dbe7ff}
+    .flash.warn{background:#fff7e6;border-color:#ffe2a8}
   </style>
 </head>
 <body>
   <div class="wrap">
+
     <div class="card">
       <h1>💸 Gastos</h1>
-      <p class="sub">Registra gastos por día y asígnalos a la obra (desde tu celular en obra). Ahora con foto de ticket.</p>
+      <div class="muted">Captura gastos por día por obra (desde el celular) y sube foto del ticket (máx 3MB).</div>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-          {% for cat, msg in messages %}
-            <div class="flash {{ 'ok' if cat=='ok' else 'err' }}">{{ msg }}</div>
-          {% endfor %}
+          <div style="margin-top:12px">
+            {% for cat,msg in messages %}
+              <div class="flash {% if cat in ['warning','danger'] %}warn{% endif %}">{{ msg }}</div>
+            {% endfor %}
+          </div>
         {% endif %}
       {% endwith %}
 
-      <!-- FILTRO (GET) -->
-      <form method="GET" action="/gastos">
-        <div class="row">
-          <div>
-            <label>Fecha</label>
-            <input type="date" name="fecha" value="{{ fecha_sel.isoformat() }}">
-          </div>
-          <div>
-            <label>Obra (opcional para filtrar)</label>
-            <select name="obra_id">
-              <option value="">Todas</option>
-              {% for o in obras %}
-                <option value="{{ o.id }}" {% if obra_id_sel==o.id %}selected{% endif %}>{{ o.nombre }}</option>
-              {% endfor %}
-            </select>
-          </div>
+      <form method="get" class="row" style="margin-top:12px">
+        <div>
+          <label>Obra</label>
+          <select name="obra_id" onchange="this.form.submit()">
+            <option value="">-- Selecciona --</option>
+            {% for o in obras %}
+              <option value="{{o.id}}" {% if obra_sel and obra_sel.id==o.id %}selected{% endif %}>{{o.nombre}}</option>
+            {% endfor %}
+          </select>
         </div>
-        <div style="margin-top:12px">
-          <button class="btn" type="submit">🔎 Ver gastos</button>
+
+        <div>
+          <label>Fecha (filtro)</label>
+          <input type="date" name="fecha" value="{% if fecha_sel %}{{ fecha_sel.strftime('%Y-%m-%d') }}{% endif %}" onchange="this.form.submit()">
         </div>
       </form>
 
-      <hr style="border:none;border-top:1px solid #eee;margin:16px 0">
+      {% if obra_sel %}
+        <p style="margin-top:12px" class="pill">
+          Obra: <b>{{obra_sel.nombre}}</b>
+          {% if fecha_sel %} | Día: <b>{{fecha_sel.strftime('%Y-%m-%d')}}</b>{% endif %}
+          | Total mostrado: <b>{{"%.2f"|format(total)}}</b>
+        </p>
 
-      <!-- ALTA (POST) -->
-      <form method="POST" action="/gastos" enctype="multipart/form-data">
-        <div class="row">
-          <div>
-            <label>Obra (obligatorio)</label>
-            <select name="obra_id" required>
-              <option value="">Selecciona…</option>
-              {% for o in obras %}
-                <option value="{{ o.id }}" {% if obra_id_sel==o.id %}selected{% endif %}>{{ o.nombre }}</option>
-              {% endfor %}
-            </select>
-          </div>
+        <form method="post" enctype="multipart/form-data" class="row" style="margin-top:12px">
+          <input type="hidden" name="obra_id" value="{{obra_sel.id}}">
 
-          <div>
-            <label>Fecha del gasto</label>
-            <input type="date" name="fecha" value="{{ fecha_sel.isoformat() }}" required>
+          <div style="min-width:160px">
+            <label>Fecha</label>
+            <input type="date" name="fecha" value="{% if fecha_sel %}{{ fecha_sel.strftime('%Y-%m-%d') }}{% endif %}" required>
           </div>
 
           <div>
             <label>Concepto</label>
-            <input type="text" name="concepto" placeholder="Ej: Cemento, gasolina, MO…" required>
+            <input name="concepto" placeholder="Ej. Cemento / Mano de obra / Gasolina" required>
           </div>
 
           <div>
+            <label>Proveedor</label>
+            <input name="proveedor" placeholder="Ej. Construrama / Ferretería">
+          </div>
+
+          <div style="min-width:160px">
             <label>Monto</label>
-            <input type="number" step="0.01" name="monto" placeholder="Ej: 1250.00" required>
+            <input name="monto" inputmode="decimal" placeholder="0.00">
           </div>
 
-          <div style="grid-column: 1 / -1;">
-            <label>Foto del ticket (opcional)</label>
-            <input type="file" name="foto" accept="image/*" capture="environment">
-            <div class="small">Tip: en celular te abre la cámara para tomar la foto directo.</div>
+          <div>
+            <label>Nota</label>
+            <textarea name="nota" placeholder="Ej. Pago de flete / material para frente 2"></textarea>
           </div>
-        </div>
 
-        <div class="topbar">
-          <button class="btn btn2" type="submit">✅ Guardar gasto</button>
-          <div class="pill">Total del día: {{ '%.2f'|format(total_dia) }}</div>
-        </div>
-      </form>
+          <div style="min-width:220px">
+            <label>Foto ticket (opcional, máx 3MB)</label>
+            <input type="file" name="ticket" accept="image/*">
+          </div>
 
-      <!-- LISTA -->
-      <table>
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Obra</th>
-            <th>Concepto</th>
-            <th>Monto</th>
-            <th>Ticket</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% if gastos and gastos|length > 0 %}
+          <div style="min-width:140px">
+            <button type="submit">Guardar</button>
+          </div>
+        </form>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Concepto</th>
+              <th>Proveedor</th>
+              <th>Monto</th>
+              <th>Nota</th>
+              <th>Ticket</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
             {% for g in gastos %}
-              <tr>
-                <td>{{ g.fecha }}</td>
-                <td>{{ g.obra.nombre }}</td>
-                <td>{{ g.concepto }}</td>
-                <td>{{ '%.2f'|format(g.monto) }}</td>
-                <td>
-                  {% if g.foto_bytes %}
-                    <a href="{{ url_for('gasto_foto', gasto_id=g.id) }}" target="_blank">
-                      <img class="thumb" src="{{ url_for('gasto_foto', gasto_id=g.id) }}" alt="Ticket">
-                    </a>
-                  {% else %}
-                    <span class="muted">Sin foto</span>
-                  {% endif %}
-                </td>
-              </tr>
+            <tr>
+              <td>{{ g.fecha.strftime('%Y-%m-%d') if g.fecha else '-' }}</td>
+              <td>{{ g.concepto }}</td>
+              <td>{{ g.proveedor or '-' }}</td>
+              <td>{{ "%.2f"|format(g.monto or 0) }}</td>
+              <td>{{ g.nota or '-' }}</td>
+              <td>
+                {% if g.foto_url %}
+                  <a href="{{g.foto_url}}" target="_blank"><img class="img" src="{{g.foto_url}}" alt="ticket"></a>
+                {% else %}
+                  <span class="muted">Sin foto</span>
+                {% endif %}
+              </td>
+              <td><a href="/gastos/{{g.id}}/editar">Editar</a></td>
+            </tr>
             {% endfor %}
-          {% else %}
-            <tr><td colspan="5" class="muted">No hay gastos registrados para esta fecha/filtro.</td></tr>
-          {% endif %}
-        </tbody>
-      </table>
+            {% if gastos|length == 0 %}
+            <tr><td colspan="7" class="muted">Sin gastos aún.</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
 
-      <div style="margin-top:14px">
-        <a class="btn" href="/">← Volver al inicio</a>
-      </div>
+      {% else %}
+        <p class="muted" style="margin-top:10px">Selecciona una obra para capturar gastos.</p>
+      {% endif %}
 
-      <p class="muted">
-        Nota: la foto se guarda en la base de datos. Mantén las fotos ligeras (máx 3 MB).
-      </p>
+      <p style="margin-top:14px"><a href="/">← Volver al inicio</a></p>
     </div>
+
   </div>
 </body>
 </html>
+

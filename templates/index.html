@@ -1,51 +1,26 @@
-
 <!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ConstruAR Control de Obra</title>
+  <title>ConstruAR</title>
   <style>
-    body{font-family: Arial; background:#f6f7fb; margin:0; padding:30px;}
-    .wrap{max-width:900px; margin:0 auto;}
-    .card{background:#fff; border:1px solid #e6e6e6; border-radius:16px; padding:18px 20px; box-shadow:0 6px 18px rgba(0,0,0,.05);}
-    .top{display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;}
-    .title{font-size:22px; margin:0;}
-    .sub{color:#555; margin:6px 0 0;}
-    .grid{display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-top:14px;}
-    .btn{display:block; text-decoration:none; background:#111; color:#fff; padding:12px 14px; border-radius:12px; text-align:center; font-weight:600;}
-    .btn2{background:#0b5fff;}
-    .btn3{background:#12a150;}
-    .btn4{background:#ff7a00;}
-    .muted{color:#777; font-size:13px; margin-top:10px;}
-    code{background:#f1f2f6; padding:2px 6px; border-radius:6px;}
+    body{font-family:Arial;background:#f6f7fb;margin:0;padding:24px}
+    .wrap{max-width:960px;margin:0 auto}
+    .card{background:#fff;border:1px solid #e6e6e6;border-radius:16px;padding:18px 20px;box-shadow:0 6px 18px rgba(0,0,0,.06)}
+    a.btn{display:inline-block;margin:8px 8px 0 0;padding:12px 14px;border-radius:12px;background:#111;color:#fff;text-decoration:none}
+    .muted{color:#666}
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <div class="top">
-        <div>
-          <h1 class="title">ConstruAR Control de Obra</h1>
-          <p class="sub">Sistema local en tu PC (sin internet) — versión inicial.</p>
-        </div>
-        <div class="muted">
-          Ruta: <code>http://127.0.0.1:5000</code>
-        </div>
-      </div>
-
-      <div class="grid">
-        <!-- ✅ Endpoint correcto: nueva_obra -->
-        <a class="btn btn2" href="{{ url_for('nueva_obra') }}">➕ Nueva Obra</a>
-
-        <a class="btn btn3" href="{{ url_for('presupuesto') }}">📑 Presupuesto</a>
-
-        <a class="btn btn4" href="{{ url_for('gastos') }}">💸 Gastos</a>
-
-        <a class="btn" href="{{ url_for('dashboard') }}">📊 Dashboard</a>
-      </div>
-
-      <p class="muted">Siguiente paso: vamos a hacer que estos botones funcionen y guarden datos.</p>
+      <h1>🏗️ ConstruAR Control de Obra</h1>
+      <p class="muted">Presupuesto, gastos y dashboard.</p>
+      <a class="btn" href="/obras">Obras</a>
+      <a class="btn" href="/presupuesto">Presupuesto</a>
+      <a class="btn" href="/gastos">Gastos</a>
+      <a class="btn" href="/dashboard">Dashboard</a>
     </div>
   </div>
 </body>

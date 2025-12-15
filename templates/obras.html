@@ -1,5 +1,73 @@
-<form method="POST" action="/prueba">
-    <input type="text" name="nombre" placeholder="Nombre de la obra">
-    <br><br>
-    <button type="submit">GUARDAR</button>
-</form>
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Obras</title>
+  <style>
+    body{font-family:Arial;background:#f6f7fb;margin:0;padding:20px}
+    .wrap{max-width:980px;margin:0 auto}
+    .card{background:#fff;border:1px solid #e6e6e6;border-radius:16px;padding:18px 20px;box-shadow:0 6px 18px rgba(0,0,0,.06)}
+    a{color:#6a00ff;text-decoration:none}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left}
+    .top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .btn{display:inline-block;padding:10px 12px;border-radius:12px;background:#111;color:#fff;text-decoration:none}
+    .muted{color:#666}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="top">
+        <div>
+          <h1>🏗️ Obras</h1>
+          <div class="muted">Crea tus obras para capturar presupuesto y gastos.</div>
+        </div>
+        <a class="btn" href="/obras/nueva">+ Nueva Obra</a>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div style="margin-top:12px">
+            {% for cat,msg in messages %}
+              <div style="padding:10px;border-radius:10px;margin:6px 0;background:#f1f5ff;border:1px solid #dbe7ff">
+                {{ msg }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Ubicación</th>
+            <th>Cliente</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in obras %}
+          <tr>
+            <td>{{ o.nombre }}</td>
+            <td>{{ o.ubicacion or "-" }}</td>
+            <td>{{ o.cliente or "-" }}</td>
+            <td>
+              <a href="/presupuesto?obra_id={{o.id}}">Presupuesto</a> |
+              <a href="/gastos?obra_id={{o.id}}">Gastos</a>
+            </td>
+          </tr>
+          {% endfor %}
+          {% if obras|length == 0 %}
+          <tr><td colspan="4" class="muted">Sin obras aún.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+
+      <p style="margin-top:14px"><a href="/">← Volver al inicio</a></p>
+    </div>
+  </div>
+</body>
+</html>
